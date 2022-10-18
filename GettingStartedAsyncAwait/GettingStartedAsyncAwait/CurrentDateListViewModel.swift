@@ -14,7 +14,8 @@ class CurrentDateListViewModel: ObservableObject {
   // ObservableObject에서 @Published 변수는 변경될때마다 UI에 변경사항이 반영된다. 따라서 ObservableObject 프로퍼티래퍼 변수의 변경은 Main thread에서 동작해야한다.
   @Published var currentDates: [CurrentDateViewModel] = []
   
-  func populateAllDates() async throws {
+  // 메서드 내부에서 error를 throw하지 않으면 메서드 반환부 앞에 async만 명시하면 된다. (async throws 대신)
+  func populateAllDates() async {
     do {
       if let currentDate = try await Webservice().getDate() {
         let currentDateViewModel = CurrentDateViewModel(currentDate: currentDate)

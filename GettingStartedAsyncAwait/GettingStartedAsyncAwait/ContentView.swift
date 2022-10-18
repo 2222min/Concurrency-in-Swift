@@ -7,52 +7,30 @@
 
 import SwiftUI
 
-struct CurrentDate: Decodable, Identifiable {
-  // Identifiable 프로토콜을 준수하려면 id를 정의해두어야 함
-  let id = UUID()
-  let date: String
-  
-  private enum CodingKeys: String, CodingKey {
-    case date = "date"
-  }
-}
-
 struct ContentView: View {
-  
-  @State private var currentDates: [CurrentDate] = []
-  
-  // await, try await을 내부에서 사용하지만, 더이상 error를 throw하지 않을 경우, 반환부에 async만 명시해주면 된다.
-  private func populateDates() async {
-    do {
-      guard let currentDate = try await Webservice().getDate() else {
-        return
-      }
-      self.currentDates.append(currentDate)
-    } catch {
-      print(error)
-    }
-  }
-  
+  // @ObservedObject 대신 @StateObject를 사용하면, ObservableObject 객체 인스턴스를 holding하고, 상위 View 업데이트에 의해 해당 뷰가 초기화되어도 기존의 상태를 유지할 수 있다. (@StateObject와 달리 @ObservedObject일 경우 초기화 됨)
+  @StateObject private var currentDateListViewModel = CurrentDateListViewModel()
+
   var body: some View {
     NavigationView {
       // currentDates의 Element들은 Identifiable 프로토콜을 준수하므로, List에서 id를 별도로 지정해줄 필요가 없다.
-      List(currentDates) { currentDate in
+      List(currentDateListViewModel.currentDates, id: \.id) { currentDate in
         Text("\(currentDate.date)")
       }.listStyle(.plain)
       
         .navigationTitle("Dates")
         .navigationBarItems(trailing: Button(action: {
           // button action
-          // async closure is deprecated now. try to use Task closure block instead.
+          // * async closure is deprecated now. try to use Task closure block instead.
           Task {
-            await populateDates()
+            await currentDateListViewModel.populateAllDates()
           }
         }, label: {
           Image(systemName: "arrow.clockwise.circle")
         }))
         .task {
-          // 아래 주석처리한 코드랑 동일한 동작(onAppear 시기에 Task block 동작 실행)을 실행할 수 있다.
-          await populateDates()
+          // 아래 주석처리한 코드랑 동일한 동작(View의 onAppear 시기에 Task block 동작 실행)을 실행할 수 있다.
+          await currentDateListViewModel.populateAllDates()
         }
 //      .onAppear {
 //        Task {
