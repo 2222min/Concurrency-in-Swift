@@ -55,6 +55,10 @@ struct ContentView: View {
         .navigationTitle("Dates")
         .navigationBarItems(trailing: Button(action: {
           // button action
+          // async closure is deprecated now. try to use Task closure block instead.
+          Task {
+            await populateDates()
+          }
         }, label: {
           Image(systemName: "arrow.clockwise.circle")
         }))
