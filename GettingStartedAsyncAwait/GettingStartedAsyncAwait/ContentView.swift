@@ -18,6 +18,9 @@ struct CurrentDate: Decodable, Identifiable {
 }
 
 struct ContentView: View {
+  
+  @State private var currentDates: [CurrentDate] = []
+  
   /// 메서드 안에서 try await을 사용하는 경우, 해당 메서드 반환부 앞에 async throws를 명시해 주어야 한다.
   private func getDate() async throws -> CurrentDate? {
     guard let url = URL(string: "https://ember-sparkly-rule.glitch.me/current-date") else {
@@ -28,6 +31,18 @@ struct ContentView: View {
     // (async throws -> try await을 사용해야함)
     let (data, _) = try await URLSession.shared.data(from: url)
     return try? JSONDecoder().decode(CurrentDate.self, from: data)
+  }
+  
+  // await, try await을 내부에서 사용하지만, 더이상 error를 throw하지 않을 경우, 반환부에 async만 명시해주면 된다.
+  private func populateDates() async {
+    do {
+      guard let currentDate = try await getDate() else {
+        return
+      }
+      self.currentDates.append(currentDate)
+    } catch {
+      print(error)
+    }
   }
   
   var body: some View {
