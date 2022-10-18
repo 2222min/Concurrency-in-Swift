@@ -47,8 +47,9 @@ struct ContentView: View {
   
   var body: some View {
     NavigationView {
-      List(1...10, id: \.self) { index in
-        Text("\(index)")
+      // currentDates의 Element들은 Identifiable 프로토콜을 준수하므로, List에서 id를 별도로 지정해줄 필요가 없다.
+      List(currentDates) { currentDate in
+        Text("\(currentDate.date)")
       }.listStyle(.plain)
       
         .navigationTitle("Dates")
@@ -57,6 +58,16 @@ struct ContentView: View {
         }, label: {
           Image(systemName: "arrow.clockwise.circle")
         }))
+        .task {
+          // 아래 주석처리한 코드랑 동일한 동작(onAppear 시기에 Task block 동작 실행)을 실행할 수 있다.
+          await populateDates()
+        }
+//        .onAppear {
+//          Task {
+//            // async function을 호출하려면 await을 앞에 붙히고, Task block내에서 실행해야 한다.
+//            await populateDates()
+//          }
+//        }
     }
   }
 }
