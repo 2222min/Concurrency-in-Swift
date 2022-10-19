@@ -132,3 +132,26 @@ queue.async {
 
 - View -> Web service -> API 요청을 하는 것은 가능은 하지만 결코 좋은 로직이 아니다.
 - MVVM 패턴에서는 View - 이벤트 -> ViewModel -> Web service / Client -> API 요청을 할 수 있다.
+
+
+
+### What is Continuation?
+
+- continuation을 사용하면 기존의 callback closure가 있는 legacy 메서드를 그대로 유지하고 wrapping해서 외부에서 콜벡 결과에 따른 async await 처리를 할 수 있도록 도와준다.
+
+- callback closure를 사용하거나 여러 사유로 변형하기 힘든 third-party, legacy 메서드를 wrapping해서 외부에서 async await 방식으로 처리하고자 할때 유용하게 사용할 수 있다.
+
+- withCheckedContinuation 사용 예시
+
+~~~ swift
+func getPosts() async throws -> [Post] {
+  // error를 throw할 일이 없으면 withCheckedContinuation을 사용
+  return await withCheckedContinuation { continuation in
+    // continuation을 활용하면 callback closure가 있는 getPosts 메서드를 외부에서는 async await 방식으로 처리할 수 있도록 할 수 있다.
+		getPosts { posts in
+			continuation.resume(returning: posts)
+		}
+	}
+}
+~~~
+
