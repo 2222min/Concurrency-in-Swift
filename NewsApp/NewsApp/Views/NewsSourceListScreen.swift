@@ -21,9 +21,13 @@ struct NewsSourceListScreen: View {
         }
       }
       .listStyle(.plain)
-      .onAppear {
-        newsSourceListViewModel.getSources()
+      .task {
+        await newsSourceListViewModel.getSources()
       }
+//      .onAppear {
+        // async function은 Task {} 블럭내에 사용하거나, View가 나타날때 사용할 목적이라면 .task viewModifier 내에서 사용할 수도 있다.
+//        newsSourceListViewModel.getSources()
+//      }
       .navigationTitle("News Sources")
       .navigationBarItems(trailing: Button(action: {
         // refresh the news
