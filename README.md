@@ -155,3 +155,10 @@ func getPosts() async throws -> [Post] {
 }
 ~~~
 
+
+
+## Section 7: Project  Time: News App
+
+News App 초기상태는 async await, continiuation 등의 Concurrency를 사용하지 않은 버전입니다. @escaping closure 등으로 콜백 이벤트를 처리할 수도 있지만, 콜백 지옥을 야기하거나, 콜백 클로져 실행 후 특정 분기 return을 놓치면 비정상 동작을 할 수 있는 단점이 있습니다.
+
+이제 이 앱에 async/await, continuation, mainActor 등의 개념을 적용해 봅시다!
