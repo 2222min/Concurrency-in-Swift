@@ -164,3 +164,9 @@ News App 초기상태는 async await, continiuation 등의 Concurrency를 사용
 이제 이 앱에 async/await, continuation, mainActor 등의 개념을 적용해 봅시다!
 
 async/await, continuation, @MainActor 등의 개념들은 URLSession, Notification, HealthKit, CoreData 등 다양한 곳에서 활용 가능하다
+
+
+
+## Section 8: Understanding Structured Concurrency in Swift
+
+##### 👩🏻‍💻 learning point : Structured Concurrency, Async Let, Task Group, Unstructured Tasks, Detached Tasks, Task Cancellation
