@@ -31,6 +31,11 @@ struct NewsSourceListScreen: View {
       .navigationTitle("News Sources")
       .navigationBarItems(trailing: Button(action: {
         // refresh the news
+        // async/await function을 사용하고 싶으며, Task 블럭 내에 사용하면 된다.
+        // 이전에 사용하던 async {} closure는 deprecated 됨.
+        Task {
+          await newsSourceListViewModel.getSources()
+        }
       }, label: {
         Image(systemName: "arrow.clockwise.circle")
       }))

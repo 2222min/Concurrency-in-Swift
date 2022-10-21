@@ -119,7 +119,7 @@ queue.async {
 
 
 
-### MVVM
+## MVVM
 
 - Model, View, ViewModel로 구성되는 디자인패턴 기법
 - ViewModel이 비즈니스로직을 가져가게 되며 MVC의 Massive ViewController를 해결하고 Testability의 어려움을 해소할 수 있다.
@@ -135,7 +135,7 @@ queue.async {
 
 
 
-### What is Continuation?
+## What is Continuation?
 
 - continuation을 사용하면 기존의 callback closure가 있는 legacy 메서드를 그대로 유지하고 wrapping해서 외부에서 콜벡 결과에 따른 async await 처리를 할 수 있도록 도와준다.
 
@@ -162,3 +162,5 @@ func getPosts() async throws -> [Post] {
 News App 초기상태는 async await, continiuation 등의 Concurrency를 사용하지 않은 버전입니다. @escaping closure 등으로 콜백 이벤트를 처리할 수도 있지만, 콜백 지옥을 야기하거나, 콜백 클로져 실행 후 특정 분기 return을 놓치면 비정상 동작을 할 수 있는 단점이 있습니다.
 
 이제 이 앱에 async/await, continuation, mainActor 등의 개념을 적용해 봅시다!
+
+async/await, continuation, @MainActor 등의 개념들은 URLSession, Notification, HealthKit, CoreData 등 다양한 곳에서 활용 가능하다
