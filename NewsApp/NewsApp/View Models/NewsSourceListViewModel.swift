@@ -7,6 +7,7 @@
 
 import Foundation
 
+@MainActor
 class NewsSourceListViewModel: ObservableObject {
   
   @Published var newsSources: [NewsSourceViewModel] = []
@@ -14,9 +15,10 @@ class NewsSourceListViewModel: ObservableObject {
   func getSources() async {
     do {
       let newsSources = try await Webservice().fetchSources(url: Constants.Urls.sources)
-      DispatchQueue.main.async {
-        self.newsSources = newsSources.map(NewsSourceViewModel.init)
-      }
+      // @MainActor로 지정된 객체 내부이므로, 별도로 main thread 동작을 명시할 필요가 없음
+//      DispatchQueue.main.async {
+      self.newsSources = newsSources.map(NewsSourceViewModel.init)
+//      }
     } catch {
       // error를 throw하지는 않음 따라서 해당 메서드 반환부에는 async만 붙으면 됨
       print(error)
