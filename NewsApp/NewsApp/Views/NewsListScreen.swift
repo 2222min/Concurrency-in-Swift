@@ -20,8 +20,9 @@ struct NewsListScreen: View {
         NewsArticleCell(newsArticle: newsArticle)
       }
       .listStyle(.plain)
-      .onAppear {
-        newsArticleListViewModel.getNewsBy(sourceId: newsSource.id)
+      .task {
+        // .task viewModifier 블럭내에서 async func을 사용 가능하다. 해당 블럭을 view의 onAppear 시점에 동작한다.
+        await newsArticleListViewModel.getNewsBy(sourceId: newsSource.id)
       }
       .navigationTitle(newsSource.name)
     }

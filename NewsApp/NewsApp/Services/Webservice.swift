@@ -25,9 +25,24 @@ class Webservice {
     let newsSourceResponse =  try? JSONDecoder().decode(NewsSourceResponse.self, from: data)
     return newsSourceResponse?.sources ?? []
   }
+  
+  func fetchNewsAsync(sourceId: String, url: URL?) async throws -> [NewsArticle] {
+    // withCheckedThrowingContinuation은 블럭 내에서 error를 throw할 수도 있다. 앞에 try await를 붙혀준다.
+    try await withCheckedThrowingContinuation { continuation in
+      // async function으로 변경이 불가한 메서드를 아래와 같이 사용하되, 마지막 결과를 continuation.resume(returning or throwing)으로 처리한다.
+      fetchNews(by: sourceId, url: url) { result in
+        switch result {
+        case .success(let articles):
+          continuation.resume(returning: articles)
+        case .failure(let error):
+          continuation.resume(throwing: error)
+        }
+      }
+    }
+  }
 
+  // async/await 하게 변경이 불가능한 레거시, 3rd party 메서드를 외부에서 내가 구현한 custom function으로 wrapping해서 async/await하게 사용하고 싶다면, continuation을 활용할 수 있다. (+ iOS 13)
   func fetchNews(by sourceId: String, url: URL?, completion: @escaping (Result<[NewsArticle], NetworkError>) -> Void) {
-    
     guard let url = url else {
       completion(.failure(.badUrl))
       return
