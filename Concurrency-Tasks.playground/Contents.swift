@@ -1,6 +1,8 @@
 // MARK: 37. Scenario: Calculating APR Using Credit Score
 // MARK: 38. Async-let in a Loop
 // async let을 사용하면 단일 async task에서 멈춰있지않고, 다른 task까지 Concurrently하게 동작시킬 수 있다.
+// MARK: 39. Async-let in a Loop
+// loop 문과 async let을 함께 사용해보자
   
 import UIKit
 
@@ -35,6 +37,7 @@ func calculateAPR(creditScores: [CreditScore]) -> Double {
 }
 
 func getAPR(userId: Int) async throws -> Double {
+  print("getAPR calling")
   guard let equifaxUrl = Constants.Urls.equifax(userId: userId),
         let experianUrl = Constants.Urls.experian(userId: userId) else {
     throw NetworkError.badUrl
@@ -68,4 +71,18 @@ func getAPR(userId: Int) async throws -> Double {
 Task {
   let apr = try await getAPR(userId: 1)
   print(apr)
+}
+
+let ids = [1, 2, 3, 4, 5]
+Task {
+  for id in ids {
+    // * 아래와 같이 loop문에서 async/await을 사용할 수 있는데 알아두어야 할 점
+    // 1) loop 문이 한번 돌 때, getAPR 내의 async let task들이 concurrent 하게 수행된다.
+    // 2) task는 concurrent 하게 동작하지만, 결국 feeding 단계에서 suspending이 된다.
+    // 3) 두개의 task가 전부 끝나고, feeding까지 끝나면, 비로소 loop의 다음 getAPR를 수행한다. (결국 각 getAPR 메서드 내에서 await하는 라인이 있기 때문에 suspend하긴 함. API 요청이 concurrent 할 뿐.)
+    // => loop를 사용한다고, 모든 getAPR 동작들이 concurrent하게 동작하는것이 아니라는 점을 알아야 한다. (task group을 활용하면 이 또한 concurrent 하게 동작은 가능 함.)
+    // task group을 살펴 보기 전에 먼저 중요한 요소 중 하나인 cancelling a task 를 알아보자.
+    let apr = try await getAPR(userId: id)
+    print(apr)
+  }
 }
