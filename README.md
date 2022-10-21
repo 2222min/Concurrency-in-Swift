@@ -170,3 +170,25 @@ async/await, continuation, @MainActor 등의 개념들은 URLSession, Notificati
 ## Section 8: Understanding Structured Concurrency in Swift
 
 ##### 👩🏻‍💻 learning point : Structured Concurrency, Async Let, Task Group, Unstructured Tasks, Detached Tasks, Task Cancellation
+
+### async-let Tasks
+
+~~~swift
+// try await을 사용하였기에 equifaxUrl로부터 결과 값을 수신받을때까지 suspend 된다. ㅠㅠ equifaxUrl 요청이 끝나야 experianUrl로부터 요청을 수행한다..
+  // => Concurrently하게 두개 다 요청하는 방법?
+  // "Let's work on these two tasks(equifax, experian) concurrently!!"
+  // => then, how do we do that?? => async let!
+  // MARK: Async-let
+  // - async let을 사용하면, async 작업에 대한 reference를 잡고 있는다. 즉시 반환되며, concurrent task로 동작하게 된다.
+  // - async let을 붙였다면 뒤에 붙여 사용했던 try await은 명시하지 않아도 된다.(ex) 아래 코드의 URLSession 앞에 try await를 명시할 의무가 없음
+  // * 아래 equifaxData, experianData는 모두 async let으로 정의된다.
+  async let (equifaxData, _) = URLSession.shared.data(from: equifaxUrl)
+  async let (experianData, _) = URLSession.shared.data(from: experianUrl)
+  
+  // custom code
+  // async throws 메서드로부터 async let 상수를 받은 것이므로, 이를 사용할때는 try await을 사용해야 한다.
+  // 아래와 같이 async let 값에 대한 await(try await)을 할때 비로소 suspend 된다! 따라서 async task는 동시에 동작시키고, 이후에 실제 값을 받는 부분에서 기다리는 것 => API 요청은 concurrently하게 하고, 받은 값을 feeding할때만 순차적으로 나눠줌.
+  let equifaxCreditScore = try? JSONDecoder().decode(CreditScore.self, from: try await equifaxData)
+  let experianCreditScore = try? JSONDecoder().decode(CreditScore.self, from: try await experianData)
+~~~
+
