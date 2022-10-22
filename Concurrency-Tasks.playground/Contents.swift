@@ -1,10 +1,13 @@
 // MARK: 37. Scenario: Calculating APR Using Credit Score
 // MARK: 38. Async-let in a Loop
-// async let을 사용하면 단일 async task에서 멈춰있지않고, 다른 task까지 Concurrently하게 동작시킬 수 있다.
+// - async let을 사용하면 단일 async task에서 멈춰있지않고, 다른 task까지 Concurrently하게 동작시킬 수 있다.
 // MARK: 39. Async-let in a Loop
-// loop 문과 async let을 함께 사용해보자
+// - loop 문과 async let을 함께 사용해보자
 // MARK: 40. Cancelling a Task
-// Task.checkCancellation()을 사용하면, 에러가 throwing되어도 이후의 loop task를 멈추지 않고 지속 수행할 수 있다.
+// - Task.checkCancellation()을 사용하면, 에러가 throwing되어도 이후의 loop task를 멈추지 않고 지속 수행할 수 있다.
+// MARK: 42. Unstructured Tasks
+// - Unstructured Task의 예는 async methods를 사용하지 못하는 곳에서 사용하는 경우이다. 이때 Task { ... } 블럭 내에서 await, try await 키워드를 붙혀서 async, async throws 메서드를 async하게 사용할 수 있다.
+
   
 import UIKit
 
