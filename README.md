@@ -212,3 +212,28 @@ Task {
 }
 ~~~
 
+
+
+### Cancelling a Task, Task.checkCancellation()
+
+~~~swift
+let ids = [1, 2, 3, 4, 5]
+var invalidIds: [Int] = []
+Task {
+  for id in ids {
+    do {
+      // Task.checkCancellation()을 사용하면, 에러가 throwing되어도 이후의 loop task를 멈추지 않고 지속 수행할 수 있다.
+      try Task.checkCancellation()
+      let apr = try await getAPR(userId: id)
+      print(apr)
+    } catch {
+      print(error)
+      invalidIds.append(id)
+    }
+  }
+  
+  // error가 발생한 id를 출력 => invalidIdList : 2 4
+  print("invalidIdList : \(invalidIds.map { String($0) }.joined(separator: " "))")
+}
+~~~
+
