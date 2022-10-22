@@ -237,3 +237,56 @@ Task {
 }
 ~~~
 
+
+
+### Group Tasks
+
+##### - withTaskGroup, withThrowingTaskGroup (group.addTask { ... })
+
+~~~swift
+// MARK: 41. Group Tasks
+// async let 을 loop문에서 사용하면 lopp 내 각각의 task 내에서 API 요청은 concurrent 하게 동작하지만 결국 feeding 과정에서 suspend 되고, 이를 기다리는 것을 알 수 있었다.
+// => 루프 내 각각의 task를 모두 concurrent하게 동작하고 싶다면? => task groups를 사용하면 된다.
+
+// getAPR은 각각 2개의 API 요청을 concurrent하게 진행함
+// [Main Task] -> first Group (getAPR) -> two tasks concurrently
+//             -> second Group (getAPR) -> two tasks concurrently
+//             -> ..... (getAPR) -> two tasks concurrently
+
+let ids = [1, 2, 3, 4, 5]
+var invalidIds: [Int] = []
+func getAPRForAllUsers(ids: [Int]) async throws -> [Int: Double] {
+  var userAPR: [Int: Double] = [:]
+  
+  // 1) loop 내 작업들을 concurrent하게 동작하기 위해 for loop 바깥에 try await withThrowingTaskGroup을 사용할 수 있다.
+  // - of: group에 추가할 task 결과 타입
+  // - body: group task가 수행될 클로져를 정의
+  try await withThrowingTaskGroup(of: (Int, Double).self, body: { group in
+    for id in ids {
+      // 2) group.addTask { ... } 내에 concurrently하게 동작시킬 작업을 정의, 결과는 위에서 정의한 (Int, Double) 튜플타입으로 반환
+      group.addTask {
+        // 해당 블럭에서는 task 블럭 밖의 값은 변경할 수 없다 getAPR의 결과를 튜플방식으로 group task로 추가한다.
+        // loop가 one by one으로 동작이 되기 때문에 dataRacing을 발생할 걱정도 없다.
+        // 여기의 작업은 loop 내 각각의 task 중 어떤게 가장 먼저 완료될 지 알 수 없어요. concurrent하게 동작하기 때문에!
+        return (id, try await getAPR(userId: id))
+      }
+    }
+    
+    // 3) group에 추가된 task들을 async하게 차례대로 작업한다. 여기에서 loop 내부 각 task들은 순차적으로 동작하여 data racing 걱정 없다.
+    for try await (id, apr) in group {
+      // loop문에서 각 task 결과에 대한 addTask를 수행하ㅗ for try await loop에서 비로소 딕셔너리에 셋팅이 가능했다. (여기는 addTask 블럭 내부가 아니므로, 외부 값 변경이 가능
+      userAPR[id] = apr
+    }
+  })
+
+  return userAPR
+}
+
+Task {
+  let userAPRs = try await getAPRForAllUsers(ids: ids)
+  print(userAPRs)
+}
+~~~
+
+
+
