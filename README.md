@@ -157,6 +157,10 @@ func getPosts() async throws -> [Post] {
 
 
 
+
+
+
+
 ## Section 7: Project  Time: News App
 
 News App 초기상태는 async await, continiuation 등의 Concurrency를 사용하지 않은 버전입니다. @escaping closure 등으로 콜백 이벤트를 처리할 수도 있지만, 콜백 지옥을 야기하거나, 콜백 클로져 실행 후 특정 분기 return을 놓치면 비정상 동작을 할 수 있는 단점이 있습니다.
@@ -319,6 +323,41 @@ Task {
     return randomImages
   }
 ~~~
+
+
+
+
+
+
+
+## Section 9: Project Time - Random Images and Random Quotes
+
+아래와 같은 요소를 활용하여 randomImage API 요청을 concurrent하게 요청할 수 있다.
+
+- ##### structured concurrency : async let
+
+  - 다수의 API 요청을 concurrent하게 수행하고, feeding 단계(await 사용 위치)에서 suspend하여 순차적으로 feddiing을 할 수 있다.
+
+- ##### unstructured concurrency : Task { ... }
+
+  - 가장 앞 단에서 await 동작을 수행하기 위해서는 Task 블럭 내부에서 요청한다. 혹은, View의 onAppear 이벤트 시 await 동작을 수행하고자 한다면, .task { ... } viewModifier를 사용할 수 있다.
+
+- ##### task group : withThrowingTaskGroup, withTaskGroup (group.addTask)
+
+  - 모든 loop의 Task(각각 random, quote API를 호출하는 task)들을 concurrent하게 동작시킬때 사용할 수 있다.
+  - withThrowingTaskGroup, withTaskGroup 내에서 concurrent하게 동작해야할 코드를 작성 후(addTask), 그 다음 for await - in loop / for try await - in loop 문 내에서 요청 결과를 순차적으로 feeding 할 수 있다.
+
+- ##### @MainActor
+
+  - @MainActor를 지정한 영역은 항상 메인스레드에서의 동작이 보장되므로 내부에 추가적으로 DispatchQueue.main.async { ... }, MainActor.run { ... } 와 같은 thread 명시를 할 필요가 없다.
+
+- ##### Section 9 예제 앱 동작 결과 (concurrent하게 random image, quote를 요청 및 수신 하여 UI 랜더링)
+
+<div> 
+  <img width=200 src="https://user-images.githubusercontent.com/4410021/197397459-fb6257d0-0b23-43e1-bb24-aee7dd6e8e43.gif">
+</div>
+
+
 
 
 
@@ -538,4 +577,3 @@ let actorMan = ActMan()
 print(actorMan.constant)
 print(actorMan.food)
 ~~~
-

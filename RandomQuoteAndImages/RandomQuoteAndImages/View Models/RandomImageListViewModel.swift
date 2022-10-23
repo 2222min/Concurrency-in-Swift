@@ -15,7 +15,8 @@ class RandomImageListViewModel: ObservableObject {
   func getRandomImages(ids: [Int]) async {
     
     let webservice = Webservice()
-    
+    // 새로고침 할때 previous images를 보지 않고 싶다면, 아래와 같이 randomImages를 초기화 하고 API 요청하면 됨.
+    randomImages = []
     // throws 메서드가 아니므로, do { } catch 표현을 적용해준다.
     do {
       try await withThrowingTaskGroup(of: (Int, RandomImage).self, body: { group in
