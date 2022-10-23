@@ -290,6 +290,40 @@ Task {
 
 
 
+### Additional Task Group Example
+
+##### getting random images concurrently and asynchronously, and awaiting after that time.
+
+~~~swift
+// task group을 사용해서 loop 내의 각 image 요청을 모두 concurrent하게 수행하도록 해보자.
+  func getRandomImages(ids: [Int]) async throws -> [RandomImage] {
+    try await withThrowingTaskGroup(of: (Int, RandomImage).self, body: { group in
+      for id in ids {
+        // 루프내 각 task 각각 concurret task group을 만든다.
+        // task group 내의 addTask 클로져 내부에 concurrently 동작시킬 작업을 작업하고, of: 레이블에 설정한 타입에 맞게 결과를 반환한다.
+        group.addTask {
+          let randomImage = try await self.getRandomImage(id: id)
+          return (id, randomImage)
+        }
+      }
+      
+      // group에 추가했던 task들을 순차적으로 suspending하여 결과값을 randomImages에 appending한다.
+      // => 모든 getRandomImage 요청들은 concurrently 동작을 한다. 이후 아래 for try await loop에서 suspending을 하며, 수신한 값을 순차적으로 randomImages에 추가한다.
+      // => task group을 사용하지 않았을때 : loop의 각 task 내부 동작은 async하지만, 각 getRandomImage 결과값을 얻기 전까지 suspending되어 루프 다음 task(getRandomImage)를 동시에 수행하지 못했음.
+      // => task group을 사용했을때 : loop의 각 task는 concurrently, asynchronous 하게 동작한다. suspending은 for try await loop에서 발생한다.
+      for try await (_, randomImage) in group {
+        self.randomImages.append(randomImage)
+      }
+    })
+    
+    return randomImages
+  }
+~~~
+
+
+
+
+
 ## Section 12: What are Actors?
 
 
