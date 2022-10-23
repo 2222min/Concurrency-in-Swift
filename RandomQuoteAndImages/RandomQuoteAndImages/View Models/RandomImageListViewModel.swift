@@ -13,12 +13,27 @@ class RandomImageListViewModel: ObservableObject {
   @Published var randomImages: [RandomImageViewModel] = []
   
   func getRandomImages(ids: [Int]) async {
+    
+    let webservice = Webservice()
+    
     // throws 메서드가 아니므로, do { } catch 표현을 적용해준다.
     do {
-      let randomImages = try await Webservice().getRandomImages(ids: ids)
-      // @Publiished properties should be set on the main thread!!
-      // RandomImageListViewModel이 @MainActor로 지정되어있으므로, DispatchQueue.main이나 MainActor.run으로 메인스레드 정의를 별도로 할 필요가 없어요.
-      self.randomImages = randomImages.map(RandomImageViewModel.init)
+      try await withThrowingTaskGroup(of: (Int, RandomImage).self, body: { group in
+        
+        for id in ids {
+          group.addTask {
+            return (id, try await webservice.getRandomImage(id: id))
+          }
+        }
+        
+        // API 요청은 모두 concurrently 하게 동작하고, @Published 프로퍼티의 갱신은 순차적으로 업데이트하게 되면서 앱 실행 시에 보다 빠르게 UI가 업데이트 되는 것을 볼 수 있다.
+        // 첫번째 API요청이 끝나고나서야 두번째 API요청이 끝나는 방식이 아닌, 모든 API요청을 concurrently하게 하기 때문!
+        // * task group을 사용하지 않았다면? 각 API 요청은 동시에 동작하지 않으므로 더 오래 걸림
+        for try await (_, randomImage) in group {
+          randomImages.append(RandomImageViewModel(randomImage: randomImage))
+        }
+        
+      })
     } catch {
       print(error)
     }
