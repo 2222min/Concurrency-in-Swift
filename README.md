@@ -359,7 +359,14 @@ Task {
 
 
 
+
+
+
+
 ## Sesion 10: AsyncSequence
+
+- AsyncSequence Availability
+  - iOS 13.0+
 
 - Sequence protocol에 Async 성격이 추가된 것
 - Sequence와 거의 동일하다. (for loop에 사용하고 makeIterator, next를 구현한다거나, operator 사용 등... 유사)
@@ -419,6 +426,44 @@ Task {
 }
 
 ~~~
+
+
+
+### Sequence + async/await 대신 AsyncSequene + for try await 을 사용해보자
+
+- 앞서 Sequence를 사용했을때는 모든 lines의 작업을 처리한 뒤에 뒤늦게 iterator가 돌아갔다. 이는 big pause를 발생시킨다. 
+- AsyncSequence + for try await을 사용하면 각각의 line task를 순회하면서 작업이 되기 때문에 big pause를 해결할 수 있다.  (각각의 iterator에 대한 작업이 async하게 동작, 하면 완료되는대로 그 다음 iterator에 대한 작업을 수행)
+
+~~~swift
+let endPointURL = URL(string: "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.csv")!
+
+// Task { ... } -> unstructured concurrency
+Task {
+  // endPointURL.lines는 AsyncLineSequence<URL.AsyncBytes> 타입
+  // AsyncSequence를 사용하면 for await - in / for try await - in loop를 사용할 수 있다.
+  // Sequence를 사용했을때에는 endPointURL.allLines()에 대한 모든 작업이 끝나고 나서야 순회를 했지만....
+  // -> AsyncSequence와 for try await를 사용하면 big pauce할 필요없이 순회를 하며 각 line에 대한 try await 작업을 진행한다.
+  for try await line in endPointURL.lines {
+    print(line)
+  }
+}
+
+/*
+Task {
+  // Sequene에 대한 await 동작을 하고 있다. -> allLines()에서 모든 line들을 처리하고 난 이후에야 loop의 각 line이 출력된다.
+  // 아래 라인은 endPointURL.allLines()가 먼저 실행되어 모든 동작이 완료되면 -> 그때서야 iterate 하게 된다.
+  for line in await endPointURL.allLines() {
+    // endPointURL.allLines() 작업이 끝나기 전까진 아래 라인은 시작도 못한다... allLines() 작업이 매우 크다면 매우 비효율적으로 처리 될 수 있다.
+    print("line : \(line)")
+  }
+}
+*/
+
+~~~
+
+
+
+
 
 
 
