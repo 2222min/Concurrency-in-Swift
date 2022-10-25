@@ -21,7 +21,20 @@ Concurrency란, 동시에 다수의 작업을 진행하는 것.
 
 
 
-## GCD
+# GCD
+
+DispatchQueue(Grand Central DispatchQueue)는 맞춤형 작업 실행을 위한 C-기반 메커니즘입니다. DispatchQueue는 순차적이거나 동시적으로 작업을 실행하지만 이때 항상 FIFO(First In First Out) 순서로 실행됩니다. SerialQueue는 순차적으로 작업이 진행되고, ConcurrentQueue는 동시적으로 작업이 진행됩니다. 그 외 GlobalQueue(QoS), CustomQueue(Serial, Concurrent), MainQueue(Serial)등을 통해 다양한 작업을 수행할 수 있습니다.
+
+
+
+### DispatchQueue의 특징
+
+- 쉽고 간결한 프로그래밍 인터페이스를 제공합니다.
+- 자동적이고 전체적인 스레드 풀 관리기능을 제공합니다.
+- 적절히 조율된 어셈블리어의 스피드를 제공합니다.
+- 메모리 관리에 효율적입니다. (스레드 스택이 어플리케이션 메모리에 남지 않기 때문입니다.)
+- 커널의 부하를 주지 않습니다.
+- DispatchQueue를 통한 작업 비동기 전송은 대기열에 교착상태를 야기하지 않습니다. 
 
 
 
