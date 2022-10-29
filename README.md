@@ -522,6 +522,110 @@ Task {
 
 
 
+### AsyncSequence를 알아서 만들어주는 AsyncStream, AsyncThrowingStream (Swift 5.7+)
+
+- Concurrency에서는 AsyncStream, AsyncSequence를 준수하여 비동기 Iterator를 직접 구현하지 않고도 AsyncSequence를 쉽게 작성할 수 있습니다.
+- AsyncStream의  Continuation에서  yield를 사용해서 데이터를  stream에 제공하거나, 더이상 데이터를 받지 못하는 경우,  finish를 호출합니다. 혹은 데이터 성공 여부를  yield.(with: .success()), yield.(with: .failure))로 전달할 수 있습니다.  failure로 전달할때는  AsyncThrowingStream을 사용하면 됩니다.
+- withCheckedThrowingContinuation, withCheckedContinuation은 단순, async await method으로 바꾸기 어려운 애들을 래핑해서 async await 방식으로 사용하기 위한 기능이었다면,  AsyncStream은 연속적인 비동기 동작으로  for await, for try  await 방식으로 처리하기  쉽게 AsyncStream으로 변환 시켜주는 기능
+
+- AsyncStream, for await (with AsyncStream<String>)사용 예시
+
+~~~swift
+import SwiftUI
+
+func countdown() async {
+  let counter = AsyncStream<String> { continuation in
+    var countdown = 3
+    Timer.scheduledTimer(
+      withTimeInterval: 1.0,
+      repeats: true
+    ) { timer in
+      guard countdown > 0 else {
+        timer.invalidate()
+        // .failure 이벤트도 전달하고 싶다면, AsyncStream 대신, AsyncThrowingStream을 사용해야함
+        continuation.yield(with: .success("\(Date()) bye bye!"))
+        // countdown이 모두 끝나면, continuation 종료
+        return
+      }
+      
+      // countdown 할때마다 yield로 AsyncStream에 제공할 값을 전달
+      continuation.yield("\(Date()) countdown : \(countdown)")
+      // Timer에 의해 1초마다 countdown이 1씩 감소, 0이되면 Timer 중지
+      countdown -= 1
+    }
+  }
+  // AsyncStream인 counter를 순회하며 await 작업을 진행하고 있다.
+  // 만약 AsyncThrowingStream이었다면, for try await 로 작업이 되었을 것이다.
+  for await count in counter {
+    print(count)
+  }
+}
+
+func runAsyncStreamTask() {
+  Task {
+    await countdown()
+  }
+}
+
+~~~
+
+- AsyncThrowingStream for try await (with AsyncThrowingStream<String, Error>) 사용 예시 
+
+~~~swift
+import SwiftUI
+
+enum MyError: Error {
+  case invalidCount
+}
+
+func countdown() async throws {
+  let counter = AsyncThrowingStream<String, Error> { continuation in
+    var countdown = 3
+    Timer.scheduledTimer(
+      withTimeInterval: 1.0,
+      repeats: true
+    ) { timer in
+      guard countdown > 0 else {
+        timer.invalidate()
+        // .failure 이벤트도 전달하고 싶다면, AsyncStream 대신, AsyncThrowingStream을 사용해야함
+        continuation.yield(with: .success("\(Date()) bye bye!"))
+        // countdown이 모두 끝나면, continuation 종료
+        return
+      }
+      
+      // 특정 상황에 에러를 던지고 싶을때 .failure 이벤트를 보내면 AsyncSequence에 에러이벤트가 제공된다.
+      if countdown == 1 {
+        continuation.yield(with: .failure(MyError.invalidCount))
+      }
+      // countdown 할때마다 yield로 AsyncStream에 제공할 값을 전달
+      continuation.yield("\(Date()) countdown : \(countdown)")
+      // Timer에 의해 1초마다 countdown이 1씩 감소, 0이되면 Timer 중지
+      countdown -= 1
+    }
+  }
+  // AsyncThrowingStream인 counter를 순회하며 try await 작업을 진행하고 있다.
+  for try await count in counter {
+    print(count)
+  }
+}
+
+func runAsyncThrowingStreamTask() {
+  // 마지막 Task { ... } 블럭 사용 부에서는 메서드 반환부 앞에 async, async throws를 붙히지 않는다.
+  Task {
+    do {
+      try await countdown()
+    } catch {
+      // error를 throw하지 않는 경우, 메서드에 throws 키워드 설정 안해도 됨
+      print(error.localizedDescription)
+    }
+  }
+}
+
+runAsyncThrowingStreamTask()
+~~~
+
+
+
 
 
 
@@ -534,7 +638,7 @@ protect mutable state, accessing Actor isolated states,  MainActor, Nonisolated 
 
 - actor는 class와 유사하나, 상속이 불가능하다.
 - 하나의 스레드에서만 동작하여 data racing 문제를 방지할  수 있다.
-- 내부에 정의된 메서드는 await 키워드로 호출이 가능하며, 반복 호출 시, 한번의 동작이 끝나야 그 다음 동작을 수행한다.
+- 내부에 정의된 메서드는 await 키워드로 호출이 가능하며, 단기간에 다차례 반복 호출을 해도, 한번의 동작이 끝나야 그 다음 동작을 수행한다.
 
 ~~~swift
 // MARK: - Section 12: What are Actors?
@@ -586,14 +690,14 @@ struct ContentView: View {
       Button {
         let counter = Counter()
         // 1) 만약 concurrent 하게 동시에 increment가 발생한다면?
-        // 100까지 증가하면 출되는 것을 기대하고 아래코드를 실행한다면? => 카운팅 뒤죽박죽 순서로 출력이 됨... => concurrently 하게 동작하므로, 순서가 보장되지 않는다.
+        // 100까지 증가하면서 출력되는 것을 기대하고 아래코드를 실행한다면? => 카운팅 뒤죽박죽 순서로 출력이 됨... => concurrently 하게 동작하므로, 개별 작업들에 대한 시작은 순서대로 더라도, 완료되는 순서가 보장되지 않는다.
         DispatchQueue.concurrentPerform(iterations: 100) { _ in
-          // 2) 아래처럼 struct상태 counter의 copy를 생성하고, increment()를 호출하면? -> 전부 zero에서 시작하므로 1이 무수하게 출력됨.
+          // 2) 아래처럼 struct상태 counter의 copy를 생성하고, increment()를 호출하면? -> 전부 값복사로 zero에서 시작하므로 1이 무수하게 출력됨.
           // var counter = counter // struct를 사용하는 경우
           // print(counter.increment())
           // 3) actor를 사용해보자.
           Task {
-            // await, try await 등은 Task 블럭 내부, .task viewModifier 내부 등에서 사용해야한다.
+            // await, try await 등은 Task 블럭 내부, .task viewModifier 내부 등(unstructured concurrency)에서 사용해야한다.
             // => increment() 출력 결과, 순서가 보장된다!
             print(await counter.increment())
           }
@@ -603,6 +707,56 @@ struct ContentView: View {
       }
     }
 }
+~~~
+
+- AsyncStream 내에  Task.sleep()을 활용한 타이머 기능 구현방법
+  - 아래 코드처럼, continuation을 굳이 사용하지 않는 방식으로도 사용 가능, 계속 특정 작업을 하다가 nil을 반환하면 stream이 종료되도록 할 수 있음.
+
+~~~swift
+func countdown() async throws {
+    var countdown = 3
+    let counter = AsyncThrowingStream<String, Error> {
+        do {
+          	// 아래 처럼 1로 지연 작업을 주면서 Timer클래스 없이 Timer 기능을 구현 가능
+            try await Task.sleep(nanoseconds: 1_000_000_000)
+        } catch {
+            return nil
+        }
+        // 한번의 stream작업 블럭이 끝날때마다 countdown을 1씩 줄임
+        defer { countdown -= 1 }
+        
+        if countdown == 1 {
+          	// AsyncThrowingStream이므로, throw로 Error 던질 수도 있음 
+            throw NSError(domain: "error", code: 1)
+        }
+        
+        switch countdown {
+        case (1...): return "\(Date()) \(countdown)..."
+        case 0: return "\(Date()) 🎉 Hello"
+        default: return nil
+        }
+    }
+    
+    for try await count in counter {
+        print(count)
+    }
+}
+
+func run() {
+    Task {
+        do {
+            try await countdown()
+        } catch {
+            print(error)
+        }
+    }
+}
+
+/** Output
+2022-06-22 15:58:23 +0000 3...
+2022-06-22 15:58:24 +0000 2...
+Error Domain=error Code=1 "(null)"
+*/
 ~~~
 
 
@@ -625,7 +779,6 @@ enum BankError: Error {
 // 이번에도 BankAccount를 actor로 선언했다. 한번에 한번씩만 접근이 가능하다.
 // concurrent task로 공통의 자원을 병행적으로 읽거나 쓰는 문제인 data racing(race condition)을 방지해주며 내부의 메서드는 async/await 하게 동작해야 한다.
 actor BankAccount {
-  
   let accountNumber: Int
   var balance: Double
   
@@ -636,7 +789,7 @@ actor BankAccount {
   
   // getCurrentAPR은 고정된 값만 반환하지 내부에서 변경이 일어나는 메서드는 아니다.
   // 따라서 Data racing이 발생할 일이 없다. 이런 경우에는 앞에 nonisolated를 붙혀서 actor가 아닌 struct, class 메서드처럼 호출해서 사용할 수 있다.
-  // => nonisolated func : "야 이거 race condition 발생할 일 없는 놈이야 async/await call방식을 취할 필요가 없어!"
+  // => nonisolated func : "야 이거 race condition 발생할 일 없는 놈이야 async/await call 방식을 취할 필요가 없어!"
   nonisolated func getCurrentAPR() -> Double {
     // nonisolated func은 내부에 변경 코드를 허용하지 않는다.
     // * 경고 내용 : Actor-isolated property 'balance' can not be mutated from a non-isolated context
@@ -664,7 +817,6 @@ actor BankAccount {
 }
 
 struct ContentView: View {
-  
   var body: some View {
     Button {
       
@@ -672,8 +824,8 @@ struct ContentView: View {
       let otherAccount = BankAccount(accountNumber: 456, balance: 100)
       
       // getCurrentAPR()은 actor method임에도 nonisolated func이므로, async/await하게 사용하지 않아도 된다.
-      let _ = bankAccount.getCurrentAPR()
-      
+      let _ = bankAccount.getCurrentAPR() // await, try await 등의 예약어가 붙지 않는 모습. nonisolated property이기 땜.
+      // 은행 잔고 출금을 concurrent하게 진행하는데, 완료 시점이 뒤죽박죽이 된다면? 의도치 않은 사고가 발생할 수 있다!
       DispatchQueue.concurrentPerform(iterations: 100) { _ in
         Task {
           try? await bankAccount.transfer(amount: 300, to: otherAccount)
