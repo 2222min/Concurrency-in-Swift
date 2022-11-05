@@ -1,6 +1,20 @@
 # Concurrency-in-Swift
 Let's learn about Concurrency in Swift with udemy lecture.
 
+* lecture link : https://www.udemy.com/course/asyncawait-and-actors-concurrency-in-swift/
+
+<p>
+<p>
+
+# 목차
+- [Section 7: project time, news app](https://github.com/applebuddy/Concurrency-in-Swift#section-7-project--time-news-app)
+- [Section 8: understanding structured concurrency in swift](https://github.com/applebuddy/Concurrency-in-Swift#section-8-understanding-structured-concurrency-in-swift)
+- [Section 9: Project Time - Random Images and Random Quotes](https://github.com/applebuddy/Concurrency-in-Swift#section-9-project-time---random-images-and-random-quotes)
+- [Section 10: AsyncSequence](https://github.com/applebuddy/Concurrency-in-Swift#sesion-10-asyncsequence)
+- [Section 11: Concurrent programming problem and solutions](https://github.com/applebuddy/Concurrency-in-Swift#section-11-concurrent-programming-problem-and-solutions)
+- [Section 12: What a the Actors?](https://github.com/applebuddy/Concurrency-in-Swift#section-12-what-are-actors)
+
+<p>
 
 
 ## Concurrency
