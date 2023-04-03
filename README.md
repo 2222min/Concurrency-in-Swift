@@ -363,7 +363,7 @@ Task {
 
 - ##### structured concurrency : async let
 
-  - 다수의 API 요청을 concurrent하게 수행하고, feeding 단계(await 사용 위치)에서 suspend하여 순차적으로 feddiing을 할 수 있다.
+  - 다수의 API 요청을 concurrent하게 수행하고, feeding 단계(await 사용 위치)에서 suspend하여 순차적으로 feeding을 할 수 있다.
 
 - ##### unstructured concurrency : Task { ... }
 
